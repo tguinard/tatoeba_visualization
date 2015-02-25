@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.chord path {
+  fill-opacity: .67;
+  stroke: #000;
+  stroke-width: .5px;
+}
+
+</style>
+<body>
+    <h2>Tatoeba Translations</h2>
+    Show
+    <select id="numlang_select">
+         <option value="10">10</option>
+         <option value="20">20</option>
+         <option value="30">30</option>
+         <option value="40">40</option>
+         <option value="50">50</option>
+    </select>
+    languages
+    <br>
+    Show edge if
+    <select id="mintranslate_select">
+         <option value="1">1</option>
+         <option value="10">10</option>
+         <option value="100">100</option>
+         <option value="1000">1000</option>
+         <option value="10000">10000</option>
+         <option value="100000">100000</option>
+    </select>
+    or more translations
+    <br>
+    <div id="chart"></div>
+    This visualization shows translation link data from <a href="http://tatoeba.org/">Tatoeba</a>.  The width of each edge is proportional to the number of direct sentence translations between the two languages.  The data can be downloaded <a href="http://tatoeba.org/eng/downloads">here</a>.
+</body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="matrix.json" type="text/javascript"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+
+<script>
+
+$(document).ready(function() {
+    $('#mintranslate_select').change(draw);
+    $('#numlang_select').change(draw);
+    $('#numlang_select option[value="30"]').attr('selected', 'selected');
+    $('#mintranslate_select option[value="1"]').attr('selected', 'selected');
+    draw();
+});
+var svg;
+var chord = d3.layout.chord()
+    .padding(.05)
+    .sortSubgroups(d3.descending);
+
+function draw() {
+    $("svg").remove();
+
+    var langnum = parseInt($( "#numlang_select option:selected" ).text());
+    var mintrans = parseInt($( "#mintranslate_select option:selected" ).text());
+
+    var matrix_copy = $.extend(true, [], matrix);
+    matrix_copy = matrix_copy.slice(0, langnum);
+    $.each(matrix_copy, function(index, ar){
+        matrix_copy[index] = ar.slice(0, langnum);
+    });
+
+    $.each(matrix_copy, function(index, ar){
+        $.each(ar, function(i, elem){
+            if(elem < mintrans){
+                matrix_copy[index][i] = 0;
+            }
+        });
+    });
+
+    chord.matrix(matrix_copy);
+
+
+    var width = 600,
+    height = 600,
+    innerRadius = Math.min(width, height) * .28,
+    outerRadius = innerRadius * 1.1;
+
+    var fill = d3.scale.ordinal()
+        .domain(d3.range(9))
+        .range(colors);
+
+    var labelfill = d3.scale.ordinal()
+        .domain(labels.slice(0, num_family[langnum]))
+        .range(colorlabels.slice(0, num_family[langnum]));
+
+    svg = d3.select("#chart").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+    svg.append("g").selectAll("path")
+        .data(chord.groups)
+        .enter().append("path")
+        .style("fill", function(d) { return fill(d.index); })
+        .style("stroke", function(d) { return fill(d.index); })
+        .attr("d", d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius))
+        .on("mouseover", fade(.05))
+        .on("mouseout", fade(1));
+    svg.append("g")
+        .attr("class", "chord")
+        .selectAll("path")
+        .data(chord.chords)
+        .enter().append("path")
+        .attr("d", d3.svg.chord().radius(innerRadius))
+        .style("fill", function(d) { return fill(d.target.index); })
+        .style("opacity", 1);
+
+    var g = svg.selectAll(".group")
+        .data(chord.groups)
+        .enter().append("g")
+        .attr("class", "group");
+
+    g.append("text")
+        .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
+        .attr("dy", ".35em")
+        .attr("transform", function(d) {
+            return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+                + "translate(" + (innerRadius + 26) + ")"
+                + (d.angle > Math.PI ? "rotate(180)" : "");
+        })
+        .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+        .text(function(d) { return nameByIndex[d.index]; });
+
+    var legend = d3.select("#chart").append("svg")
+        .attr("class", "legend")
+        .attr("width", 200)
+        .attr("height", 350)
+        .selectAll("g")
+        .data(labelfill.domain().slice())
+        .enter().append("g")
+        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+
+    legend.append("rect")
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", labelfill);
+
+    legend.append("text")
+        .attr("x", 24)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .text(function(d) { return d; });
+
+};
+
+// Returns an event handler for fading a given chord group.
+function fade(opacity) {
+    return function(g, i) {
+        svg.selectAll(".chord path")
+            .filter(function(d) { return d.source.index != i && d.target.index != i; })
+            .transition()
+            .style("opacity", opacity);
+    };
+}
+
+</script>
+
