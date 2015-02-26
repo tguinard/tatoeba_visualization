@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-import simplejson as json
+import json
 from collections import OrderedDict
 
 
