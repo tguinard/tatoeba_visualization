@@ -63,7 +63,7 @@ def dedup(l):
     return list(OrderedDict.fromkeys(l))
 
 def get_colors(id_to_lang, max_lang):
-    color_order = ['#808080', '#00ffff', '#ffc0cb', '#008000', '#ff0000', '#ffa500', '#000000', '#0000ff', '#ffff00', ]
+    color_order = ['#808080', '#00ffff', '#ffc0cb', '#008000', '#ff0000', '#ffa500', '#000000', '#0000ff', '#ffff00', '#663300', '#660099']
 
     iso_to_family = {}
     for line in open('families.txt'):

@@ -37,6 +37,7 @@ isos = {
     'avk': 'Constructed Language',
     'cycl': 'Constructed Language',
     'ben': 'Indo-European',
+    'que': 'Quechuan',
 }
 for line in open('isos.txt'):
     iso = line.split()[0]
